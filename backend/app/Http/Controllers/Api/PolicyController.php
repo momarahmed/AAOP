@@ -6,15 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Policy;
 use App\Models\Workspace;
 use App\Services\AuditLogger;
+use App\Services\Policy\OpaPolicyEvaluator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * Policy CRUD + dry-run evaluate (PRD §17.6 FR-F3 / T-F04-13).
  *
- * The actual OPA evaluator (T-F12-01) lands in Phase 3. The dry-run
- * endpoint currently returns a structured stub so the frontend designer
- * can render the policy linter UI.
+ * Evaluate endpoint runs bundled Rego via OPA CLI (`OpaPolicyEvaluator`).
  */
 class PolicyController extends Controller
 {
@@ -85,21 +84,21 @@ class PolicyController extends Controller
     {
         $this->authorize('workspace.view', $policy->workspace);
 
-        $request->validate([
+        $data = $request->validate([
             'payload' => ['required', 'array'],
         ]);
 
-        // Phase 3 will swap this for an OPA call. For now we return a
-        // structured "no decisions" envelope that is shape-compatible so
-        // the frontend Policy Linter UI can be wired end-to-end.
+        $result = OpaPolicyEvaluator::make()->evaluate($policy->rego, $data['payload']);
+
         return response()->json([
             'policy_id'    => $policy->id,
             'enforced_at'  => $policy->enforced_at,
-            'allow'        => true,
-            'violations'   => [],
+            'allow'        => $result['allow'],
+            'violations'   => $result['violations'],
             'warnings'     => [],
             'evaluated_at' => now()->toIso8601String(),
-            'evaluator'    => 'stub-v0',
+            'evaluator'    => $result['evaluator'],
+            'details'      => isset($result['raw']) ? ['opa' => $result['raw']] : null,
         ]);
     }
 }

@@ -29,4 +29,13 @@ return [
     'mcp' => [
         'remote_base' => env('AAOP_MCP_REMOTE_BASE'),
     ],
+
+    'opa' => [
+        'binary' => env('OPA_BINARY', 'opa'),
+        // When true and `opa` is not on PATH, evaluation returns allow=true (tests / local sans OPA).
+        'permissive_without_binary' => filter_var(
+            env('AAOP_OPA_PERMISSIVE_WITHOUT_BINARY', false),
+            FILTER_VALIDATE_BOOL
+        ),
+    ],
 ];

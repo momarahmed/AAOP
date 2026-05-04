@@ -20,6 +20,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git curl unzip ca-certificates \
         libicu-dev libzip-dev libonig-dev libpng-dev libjpeg-dev libfreetype6-dev \
         libssl-dev pkg-config default-mysql-client iputils-ping \
+    && ARCH=$(uname -m) \
+    && if [ "$ARCH" = "x86_64" ]; then OPA_ARCH=amd64; \
+       elif [ "$ARCH" = "aarch64" ]; then OPA_ARCH=arm64; \
+       else OPA_ARCH=amd64; fi \
+    && curl -fsSL -o /usr/local/bin/opa "https://github.com/open-policy-agent/opa/releases/download/v0.69.0/opa_linux_${OPA_ARCH}_static" \
+    && chmod +x /usr/local/bin/opa \
     && docker-php-ext-configure intl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \

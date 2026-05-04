@@ -108,14 +108,26 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Sample policy
-        Policy::query()->firstOrCreate(
+        // Sample policy (OPA Rego — see `OpaPolicyEvaluator`)
+        Policy::query()->updateOrCreate(
             ['workspace_id' => $atlas->id, 'name' => 'PII guardrail'],
             [
                 'scope' => 'workspace',
                 'enforced_at' => ['design', 'deploy', 'run'],
                 'version' => 1,
                 'enabled' => true,
+                'rego' => <<<'REGO'
+package aaop
+
+violations[msg] {
+    input.payload.deny == true
+    msg := "explicit_payload_deny"
+}
+
+allow {
+    count(violations) == 0
+}
+REGO,
                 'schema' => [
                     'rules' => [
                         ['id' => 'block_external_email', 'description' => 'Disallow sending emails to non-allowlisted domains'],

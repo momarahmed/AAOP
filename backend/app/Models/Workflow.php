@@ -18,6 +18,8 @@ class Workflow extends Model
         'name',
         'description',
         'current_version_id',
+        'canary_percent',
+        'canary_version_id',
         'status',
         'environment',
         'tags',
@@ -26,7 +28,10 @@ class Workflow extends Model
 
     protected function casts(): array
     {
-        return ['tags' => 'array'];
+        return [
+            'tags'           => 'array',
+            'canary_percent' => 'integer',
+        ];
     }
 
     /** @return BelongsTo<Workspace> */

@@ -4,12 +4,14 @@ use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CuaController;
+use App\Http\Controllers\Api\ExecutionOrchestratorController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\McpGatewayController;
 use App\Http\Controllers\Api\ObservabilityController;
 use App\Http\Controllers\Api\PlannerController;
 use App\Http\Controllers\Api\PolicyController;
 use App\Http\Controllers\Api\RunController;
+use App\Http\Controllers\Api\SelfHealingController;
 use App\Http\Controllers\Api\SecretController;
 use App\Http\Controllers\Api\WorkflowController;
 use App\Http\Controllers\Api\WorkspaceController;
@@ -80,6 +82,12 @@ Route::prefix('v1')->group(function () {
             Route::get  ('/mcp/tools',                         [McpGatewayController::class, 'tools']);
             Route::post ('/mcp/invoke',                        [McpGatewayController::class, 'invoke']);
             Route::get  ('/observability/summary',             [ObservabilityController::class, 'summary']);
+            Route::get  ('/observability/tracing',             [ObservabilityController::class, 'tracing']);
+
+            // Phase 3 — F09 Execution Orchestrator, F10 Self-Healing
+            Route::post ('/execution/route-decision',          [ExecutionOrchestratorController::class, 'routeDecision']);
+            Route::get  ('/self-healing/strategies',           [SelfHealingController::class, 'strategies']);
+            Route::post ('/self-healing/attempts',             [SelfHealingController::class, 'store']);
 
             // Secrets -------------------------------------------------
             Route::get   ('/secrets',           [SecretController::class, 'index']);

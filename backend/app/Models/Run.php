@@ -25,6 +25,8 @@ class Run extends Model
         'workspace_id',
         'workflow_id',
         'version_id',
+        'deployment_lane',
+        'routing_meta',
         'status',
         'trigger',
         'environment',
@@ -45,11 +47,12 @@ class Run extends Model
     protected function casts(): array
     {
         return [
-            'inputs'       => 'array',
-            'outputs'      => 'array',
-            'cost_credits' => 'decimal:4',
-            'started_at'   => 'datetime',
-            'finished_at'  => 'datetime',
+            'inputs'        => 'array',
+            'outputs'       => 'array',
+            'routing_meta'  => 'array',
+            'cost_credits'  => 'decimal:4',
+            'started_at'    => 'datetime',
+            'finished_at'   => 'datetime',
         ];
     }
 

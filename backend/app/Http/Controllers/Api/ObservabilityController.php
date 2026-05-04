@@ -46,4 +46,22 @@ class ObservabilityController extends Controller
             'generated_at'      => now()->toIso8601String(),
         ]);
     }
+
+    /** OTel / trace export status (F12 observability hook). */
+    public function tracing(Request $request): JsonResponse
+    {
+        /** @var Workspace $workspace */
+        $workspace = $request->attributes->get('workspace');
+        Gate::authorize('workspace.view', $workspace);
+
+        $endpoint = env('OTEL_EXPORTER_OTLP_ENDPOINT');
+
+        return response()->json([
+            'otlp_configured' => ! empty($endpoint),
+            'otlp_endpoint'   => $endpoint ? preg_replace('#//[^:]+@#', '//***@', (string) $endpoint) : null,
+            'service_name'    => env('OTEL_SERVICE_NAME', config('app.name')),
+            'trace_header'    => 'traceparent',
+            'generated_at'    => now()->toIso8601String(),
+        ]);
+    }
 }

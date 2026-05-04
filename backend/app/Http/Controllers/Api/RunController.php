@@ -8,6 +8,7 @@ use App\Models\Run;
 use App\Models\Workflow;
 use App\Models\Workspace;
 use App\Services\AuditLogger;
+use App\Services\Orchestration\ExecutionOrchestratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -38,7 +39,7 @@ class RunController extends Controller
         return response()->json(['data' => $rows]);
     }
 
-    public function start(Request $request, Workflow $workflow): JsonResponse
+    public function start(Request $request, Workflow $workflow, ExecutionOrchestratorService $orchestrator): JsonResponse
     {
         $this->authorize('workflow.run', $workflow);
 
@@ -62,10 +63,24 @@ class RunController extends Controller
         /** @var Workspace $workspace */
         $workspace = $request->attributes->get('workspace');
 
+        $corr = $request->attributes->get('correlation_id');
+        $route = $orchestrator->resolveRunVersion($workflow, is_string($corr) ? $corr : null);
+        if ($route['version_id'] === null) {
+            return response()->json([
+                'error' => [
+                    'code' => 'no_version',
+                    'message' => 'Unable to resolve execution version (canary/stable).',
+                    'type' => 'validation_error',
+                ],
+            ], 422);
+        }
+
         $run = Run::query()->create([
             'workspace_id'     => $workspace->id,
             'workflow_id'      => $workflow->id,
-            'version_id'       => $workflow->current_version_id,
+            'version_id'       => $route['version_id'],
+            'deployment_lane'  => $route['lane'] === 'none' ? null : $route['lane'],
+            'routing_meta'     => $route,
             'status'           => Run::STATUS_QUEUED,
             'trigger'          => $data['trigger'] ?? 'manual',
             'environment'      => $data['execution_mode'] ?? $workflow->environment,
@@ -167,6 +182,8 @@ class RunController extends Controller
             'id'                => $r->id,
             'workflow_id'       => $r->workflow_id,
             'version_id'        => $r->version_id,
+            'deployment_lane'   => $r->deployment_lane,
+            'routing_meta'      => $r->routing_meta,
             'status'            => $r->status,
             'trigger'           => $r->trigger,
             'environment'       => $r->environment,

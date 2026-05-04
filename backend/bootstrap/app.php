@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuditLogMiddleware;
 use App\Http\Middleware\CorrelationIdMiddleware;
+use App\Http\Middleware\OpenTelemetryMiddleware;
 use App\Http\Middleware\IdempotencyKeyMiddleware;
 use App\Http\Middleware\RateLimitHeadersMiddleware;
 use App\Http\Middleware\WorkspaceContextMiddleware;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Always-on middleware chain (request-scoped concerns).
         $middleware->append(CorrelationIdMiddleware::class);
+        $middleware->append(OpenTelemetryMiddleware::class);
         $middleware->append(RateLimitHeadersMiddleware::class);
 
         // Per-route alias map — used in routes/api.php

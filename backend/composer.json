@@ -9,7 +9,10 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10",
+        "open-telemetry/exporter-otlp": "^1.4",
+        "open-telemetry/sdk": "^1.14",
         "predis/predis": "^2.2",
+        "symfony/process": "^7.1",
         "symfony/uid": "^7.1"
     },
     "require-dev": {
