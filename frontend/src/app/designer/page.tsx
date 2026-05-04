@@ -294,17 +294,11 @@ function DesignerInner() {
                   key={p.kind}
                   draggable
                   onDragStart={(e) => onDragStart(e, p.kind, p.label)}
-                  sx={{
-                    px: 1.25, py: 0.85, borderRadius: 1, cursor: 'grab',
-                    border: '1px solid', borderColor: `var(--accent-${p.tone})`,
-                    background: `var(--accent-${p.tone}-soft)`,
-                    color: `var(--accent-${p.tone})`,
-                    fontSize: 12, fontFamily: 'var(--ff-mono)', fontWeight: 600,
-                    userSelect: 'none',
-                    '&:hover': { filter: 'brightness(1.1)' },
-                  }}
+                  className="aaop-palette-tile"
+                  style={{ ['--tone' as string]: `var(--accent-${p.tone})` }}
                 >
-                  {p.label}
+                  <Box className="aaop-palette-kind">{p.kind.split('.')[0]}</Box>
+                  <Box sx={{ flex: 1 }}>{p.label}</Box>
                 </Box>
               ))}
             </Stack>
@@ -315,6 +309,7 @@ function DesignerInner() {
             ref={wrapperRef}
             onDragOver={onDragOver}
             onDrop={onDrop}
+            className="aaop-flow"
             sx={{
               position: 'relative', minHeight: 560, height: '100%',
               borderRadius: 1, border: '1px solid oklch(50% 0.04 195 / 0.3)',
@@ -331,11 +326,17 @@ function DesignerInner() {
               onSelectionChange={({ nodes: sel }) => setSelectedNodeId(sel[0]?.id ?? null)}
               fitView
               proOptions={{ hideAttribution: true }}
-              defaultEdgeOptions={{ markerEnd: { type: MarkerType.ArrowClosed } }}
+              defaultEdgeOptions={{
+                markerEnd: { type: MarkerType.ArrowClosed, color: 'oklch(70% 0.05 200 / 0.95)' },
+                style: { stroke: 'oklch(70% 0.05 200 / 0.85)', strokeWidth: 1.6 },
+              }}
               style={{ background: 'transparent', color: 'var(--ink)' }}
             >
-              <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="oklch(50% 0.04 195 / 0.5)" />
-              <MiniMap pannable zoomable nodeColor={() => 'oklch(60% 0.10 200)'} maskColor="oklch(20% 0.025 195 / 0.8)" />
+              <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="oklch(60% 0.05 200 / 0.45)" />
+              <MiniMap pannable zoomable
+                       nodeColor={() => 'oklch(60% 0.10 200)'}
+                       nodeStrokeColor="oklch(78% 0.14 200 / 0.6)"
+                       maskColor="oklch(15% 0.02 195 / 0.55)" />
               <Controls showInteractive={false} />
             </ReactFlow>
           </Box>

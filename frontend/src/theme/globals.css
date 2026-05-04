@@ -148,3 +148,148 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .fmcp-mark-svg { filter: drop-shadow(0 0 8px oklch(78% 0.14 200 / 0.4)); }
 .fmcp-wordmark { font-family: 'Newsreader', serif; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink); }
 .fmcp-sub      { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.2em; color: var(--ink-soft); display: block; margin-top: -2px; text-transform: uppercase; }
+
+/* =====================================================================
+   xyflow / @xyflow/react theming for the dark Fusion canvas.
+   The default light-on-light styles are unreadable on the deep-teal
+   board, so we re-skin nodes, edges, handles, controls, and the minimap.
+   ===================================================================== */
+.aaop-flow .react-flow__pane            { cursor: grab; }
+.aaop-flow .react-flow__pane:active     { cursor: grabbing; }
+
+.aaop-flow .react-flow__node {
+  font-family: var(--ff-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: linear-gradient(180deg, oklch(34% 0.04 200 / 0.95), oklch(28% 0.035 195 / 0.95));
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 150px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 oklch(70% 0.04 200 / 0.18);
+  letter-spacing: -0.005em;
+}
+.aaop-flow .react-flow__node:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 1px var(--accent-cyan-soft), 0 6px 20px rgba(0,0,0,0.45);
+}
+.aaop-flow .react-flow__node.selected,
+.aaop-flow .react-flow__node:focus {
+  outline: none;
+  border-color: var(--accent-cyan-bright);
+  box-shadow: var(--glow-cyan);
+}
+
+.aaop-flow .react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: var(--bg-deepest);
+  border: 2px solid var(--accent-cyan);
+  box-shadow: 0 0 0 2px oklch(20% 0.025 195 / 0.85);
+}
+.aaop-flow .react-flow__handle:hover {
+  background: var(--accent-cyan);
+}
+
+.aaop-flow .react-flow__edge-path,
+.aaop-flow .react-flow__connection-path {
+  stroke: oklch(70% 0.05 200 / 0.85);
+  stroke-width: 1.6;
+}
+.aaop-flow .react-flow__edge.selected .react-flow__edge-path,
+.aaop-flow .react-flow__edge:focus .react-flow__edge-path {
+  stroke: var(--accent-cyan-bright);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 6px oklch(78% 0.14 200 / 0.7));
+}
+.aaop-flow .react-flow__arrowhead polyline,
+.aaop-flow .react-flow__arrowhead polygon,
+.aaop-flow .react-flow__arrowhead path {
+  fill: oklch(70% 0.05 200 / 0.95);
+  stroke: oklch(70% 0.05 200 / 0.95);
+}
+
+/* MiniMap — dark surface, mute the foreign white/grey defaults */
+.aaop-flow .react-flow__minimap {
+  background: oklch(20% 0.025 195 / 0.92) !important;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.aaop-flow .react-flow__minimap-mask { fill: oklch(15% 0.02 195 / 0.55); }
+.aaop-flow .react-flow__minimap-node { fill: oklch(60% 0.10 200); stroke: none; }
+
+/* Controls — square dark buttons with cyan accents */
+.aaop-flow .react-flow__controls {
+  background: oklch(22% 0.03 195 / 0.95);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.aaop-flow .react-flow__controls-button {
+  background: transparent;
+  border-bottom: 1px solid var(--line-subtle);
+  color: var(--ink-muted);
+  width: 28px;
+  height: 28px;
+}
+.aaop-flow .react-flow__controls-button:last-child { border-bottom: none; }
+.aaop-flow .react-flow__controls-button:hover {
+  background: oklch(35% 0.05 200 / 0.55);
+  color: var(--accent-cyan);
+}
+.aaop-flow .react-flow__controls-button svg { fill: currentColor; }
+
+/* Selection box */
+.aaop-flow .react-flow__selection,
+.aaop-flow .react-flow__nodesselection-rect {
+  background: oklch(78% 0.14 200 / 0.10);
+  border: 1px dashed var(--accent-cyan);
+}
+
+/* =====================================================================
+   Designer palette — readable, high-contrast tiles
+   ===================================================================== */
+.aaop-palette-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 8px;
+  cursor: grab;
+  user-select: none;
+  font-family: var(--ff-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  background: linear-gradient(180deg, oklch(34% 0.04 200 / 0.85), oklch(28% 0.035 195 / 0.92));
+  border: 1px solid var(--line);
+  transition: transform 80ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+.aaop-palette-tile::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--tone, var(--accent-cyan));
+  box-shadow: 0 0 12px var(--tone, var(--accent-cyan));
+}
+.aaop-palette-tile:hover {
+  border-color: var(--tone, var(--accent-cyan));
+  background: linear-gradient(180deg, oklch(40% 0.05 200 / 0.95), oklch(33% 0.04 200 / 0.95));
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 0 1px var(--tone, var(--accent-cyan)) inset;
+  transform: translateY(-1px);
+}
+.aaop-palette-tile:active { cursor: grabbing; transform: translateY(0); }
+.aaop-palette-tile .aaop-palette-kind {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--tone, var(--accent-cyan));
+  text-transform: uppercase;
+}
