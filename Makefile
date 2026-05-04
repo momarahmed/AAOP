@@ -74,8 +74,8 @@ sh-backend: ## Bash shell inside the backend container
 	$(DC) exec backend bash
 
 .PHONY: sh-frontend
-sh-frontend: ## Sh shell inside the frontend container
-	$(DC) exec frontend sh
+sh-frontend: ## Sh shell inside the frontend container (as dev — keeps .next writable)
+	$(DC) exec -u dev frontend sh
 
 .PHONY: sh-mysql
 sh-mysql: ## MySQL CLI inside the database container
@@ -123,15 +123,15 @@ test: ## Run Pest tests inside the backend container
 
 .PHONY: npm
 npm: ## Run npm — usage: `make npm ARGS="install"`
-	$(DC) exec frontend npm $(ARGS)
+	$(DC) exec -u dev frontend npm $(ARGS)
 
 .PHONY: lint
 lint: ## Lint the frontend
-	$(DC) exec frontend npm run lint
+	$(DC) exec -u dev frontend npm run lint
 
 .PHONY: build-frontend
 build-frontend: ## Build the production Next.js bundle inside the container
-	$(DC) exec frontend npm run build
+	$(DC) exec -u dev frontend npm run build
 
 # ---------------------------------------------------------------------
 # Convenience

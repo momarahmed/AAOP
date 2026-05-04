@@ -20,10 +20,14 @@ GID_TARGET="${AAOP_RUN_AS_GID:-1000}"
 # When started as root, repair perms on volumes & home before dropping.
 if [ "$(id -u)" = "0" ]; then
   mkdir -p /app/node_modules /app/.next /home/dev/.npm
-  chown "${UID_TARGET}:${GID_TARGET}" /app /app/node_modules /app/.next /home/dev/.npm 2>/dev/null || true
-  # Recursive chown only for paths that are not the bind mount itself
-  # (the bind mount's perms must come from the host).
-  chown -R "${UID_TARGET}:${GID_TARGET}" /app/node_modules /app/.next /home/dev/.npm 2>/dev/null || true
+  # Bind mount `/app` may reject chown on the mount root; volumes must be fixed.
+  chown "${UID_TARGET}:${GID_TARGET}" /app/node_modules /app/.next /home/dev/.npm 2>/dev/null || true
+  # Recursive chown on named volumes only (not the bind-mounted repo tree).
+  # If tools run `docker compose exec frontend npm …` as root, `.next` fills with
+  # root-owned files and Next (running as dev) hits EACCES — repair every boot.
+  if ! chown -R "${UID_TARGET}:${GID_TARGET}" /app/node_modules /app/.next /home/dev/.npm; then
+    echo "[entrypoint] WARNING: chown on node_modules/.next failed — check volume permissions." >&2
+  fi
 
   exec su-exec "${UID_TARGET}:${GID_TARGET}" /usr/local/bin/aaop-frontend-entrypoint "$@"
 fi
