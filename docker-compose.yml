@@ -122,7 +122,8 @@ services:
       APP_URL: http://127.0.0.1:${BACKEND_HOST_PORT:-8000}
       FRONTEND_URL: http://127.0.0.1:${FRONTEND_HOST_PORT:-3000}
       SANCTUM_STATEFUL_DOMAINS: "127.0.0.1:${FRONTEND_HOST_PORT:-3000},localhost:${FRONTEND_HOST_PORT:-3000}"
-      SESSION_DOMAIN: "127.0.0.1"
+      # Omit SESSION_DOMAIN for host-only cookies — avoids CSRF/session loss when
+      # switching between http://127.0.0.1 and http://localhost (see RUNBOOK).
     volumes:
       - ./backend:/var/www/html
       - composer_cache:/home/dev/.composer/cache

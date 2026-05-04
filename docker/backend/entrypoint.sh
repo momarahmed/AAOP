@@ -56,7 +56,14 @@ if [ -f .env ]; then
   sync_env_key APP_URL                  "${APP_URL-}"
   sync_env_key FRONTEND_URL             "${FRONTEND_URL-}"
   sync_env_key SANCTUM_STATEFUL_DOMAINS "${SANCTUM_STATEFUL_DOMAINS-}"
-  sync_env_key SESSION_DOMAIN           "${SESSION_DOMAIN-}"
+  # Always sync SESSION_DOMAIN (may be empty). Host-only cookies need SESSION_DOMAIN=
+  # cleared when compose omits the variable — sync_env_key skips blanks.
+  _SESSION_DOMAIN="${SESSION_DOMAIN-}"
+  if grep -qE "^SESSION_DOMAIN=" .env; then
+    sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${_SESSION_DOMAIN}|" .env
+  else
+    printf '\nSESSION_DOMAIN=%s\n' "${_SESSION_DOMAIN}" >> .env
+  fi
   sync_env_key DB_HOST                  "${DB_HOST-}"
   sync_env_key DB_PORT                  "${DB_PORT-}"
   sync_env_key DB_DATABASE              "${DB_DATABASE-}"

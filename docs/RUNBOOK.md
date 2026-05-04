@@ -53,7 +53,7 @@ curl -i -c /tmp/cookies.txt "$(make open | awk '/Backend API/{print $3}')/sanctu
      -H "Origin: $(make open | awk '/Frontend/{print $3}')"
 ```
 
-Make sure you're hitting the same host (`127.0.0.1`) the URL bar uses; switching between `localhost` and `127.0.0.1` mid-session will break the cookie scope (`SESSION_DOMAIN=127.0.0.1`).
+Keep `SESSION_DOMAIN` **empty** in Docker (host-only cookies): then `localhost` and `127.0.0.1` each get their own cookie jar and sessions stay consistent. Setting `SESSION_DOMAIN=127.0.0.1` while browsing `http://localhost:…` drops session cookies and surfaces **419 CSRF token mismatch**.
 
 ## "I changed ports but Sanctum still rejects /api/v1/auth/login"
 

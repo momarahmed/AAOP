@@ -59,12 +59,19 @@ export function browserApiUrl(path: string): string {
   return base ? `${base}${p}` : p;
 }
 
-let csrfReady = false;
+/** Single in-flight Sanctum CSRF bootstrap so parallel POSTs share one `/sanctum/csrf-cookie` round-trip. */
+let csrfCookieInflight: Promise<void> | null = null;
 
 async function ensureCsrf(api: AxiosInstance) {
-  if (csrfReady) return;
-  await api.get('/sanctum/csrf-cookie');
-  csrfReady = true;
+  if (!csrfCookieInflight) {
+    csrfCookieInflight = api
+      .get('/sanctum/csrf-cookie')
+      .then(() => undefined)
+      .finally(() => {
+        csrfCookieInflight = null;
+      });
+  }
+  await csrfCookieInflight;
 }
 
 export function getActiveWorkspaceId(): string | null {
@@ -104,7 +111,7 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (axios.isAxiosError(err) && err.response?.status === 419) {
-      csrfReady = false;
+      csrfCookieInflight = null;
     }
     return Promise.reject(err);
   },
