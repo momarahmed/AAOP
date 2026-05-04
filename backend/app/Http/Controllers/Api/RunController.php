@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ExecuteWorkflowRun;
 use App\Models\Run;
 use App\Models\Workflow;
 use App\Models\Workspace;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Run lifecycle endpoints (PRD §17.2 FR-B1, §20.3).
@@ -83,11 +85,46 @@ class RunController extends Controller
             meta: ['workflow_id' => $workflow->id, 'trigger' => $run->trigger],
         );
 
+        ExecuteWorkflowRun::dispatch($run->id);
+
         return response()->json([
             'run_id'     => $run->id,
             'status'     => $run->status,
-            'stream_url' => url('/api/v1/runs/'.$run->id.'/stream'),
+            // Same-origin relative URL so the SPA works behind any host port.
+            'stream_url' => '/api/v1/runs/'.$run->id.'/stream',
         ], 202);
+    }
+
+    /**
+     * SSE stub for live run events (T-F04-08 scaffold). Full WebSocket/SSE
+     * fan-out lands in Phase 3.
+     */
+    public function stream(Request $request, Run $run): StreamedResponse
+    {
+        /** @var Workspace $workspace */
+        $workspace = $request->attributes->get('workspace');
+        if ($run->workflow->workspace_id !== $workspace->id) {
+            abort(404);
+        }
+        $this->authorize('workflow.view', $run->workflow);
+
+        return response()->stream(function () use ($run) {
+            echo "event: meta\n";
+            echo 'data: '.json_encode([
+                'run_id' => $run->id,
+                'status' => $run->fresh()->status,
+                'phase'  => 'sse_stub',
+            ], JSON_THROW_ON_ERROR)."\n\n";
+            if (function_exists('ob_flush')) {
+                @ob_flush();
+            }
+            flush();
+        }, 200, [
+            'Content-Type'      => 'text/event-stream',
+            'Cache-Control'     => 'no-cache',
+            'Connection'        => 'keep-alive',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 
     public function show(Request $request, Run $run): JsonResponse

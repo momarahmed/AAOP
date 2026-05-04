@@ -67,7 +67,9 @@ class AuthController extends Controller
             $user->update(['default_workspace_id' => $workspace->id]);
 
             Auth::guard('web')->login($user, true);
-            $request->session()->regenerate();
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
 
             $this->audit->record(
                 workspaceId: $workspace->id,
@@ -111,7 +113,9 @@ class AuthController extends Controller
         }
 
         Auth::guard('web')->login($user, (bool) ($credentials['remember'] ?? false));
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
         $user->update(['last_seen_at' => now()]);
 
         $workspace = $user->defaultWorkspace();
@@ -136,8 +140,10 @@ class AuthController extends Controller
     {
         $user = $request->user();
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         if ($user) {
             $this->audit->record(

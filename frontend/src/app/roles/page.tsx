@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Chip, IconButton, MenuItem, Stack, TextField, Tooltip, Typography,
 } from '@mui/material';
@@ -47,7 +47,7 @@ export default function RolesPage() {
   const [invErr, setInvErr] = useState<string | null>(null);
   const [invOk, setInvOk] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!currentWorkspace) return;
     setLoading(true);
     try {
@@ -59,9 +59,9 @@ export default function RolesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentWorkspace]);
 
-  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [currentWorkspace?.id]);
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() =>
     members.filter(m =>

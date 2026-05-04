@@ -85,7 +85,6 @@ class WorkflowService
 
             $workflow->update([
                 'current_version_id' => $version->id,
-                'updated_at'         => now(),
             ]);
 
             $this->audit->record(

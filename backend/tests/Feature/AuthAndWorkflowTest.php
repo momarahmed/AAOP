@@ -36,4 +36,4 @@ it('creates and lists workflows scoped to a workspace', function () {
     $list = $this->withHeader('X-Workspace-Id', $ws->id)
         ->getJson('/api/v1/workflows');
     $list->assertOk()->assertJsonCount(1, 'data');
-})->skip('Requires User factory (pending Phase 2 fixture work)');
+});

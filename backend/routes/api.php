@@ -3,7 +3,11 @@
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CuaController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\McpGatewayController;
+use App\Http\Controllers\Api\ObservabilityController;
+use App\Http\Controllers\Api\PlannerController;
 use App\Http\Controllers\Api\PolicyController;
 use App\Http\Controllers\Api\RunController;
 use App\Http\Controllers\Api\SecretController;
@@ -64,8 +68,18 @@ Route::prefix('v1')->group(function () {
             Route::get  ('/workflows/{workflow}/runs',          [RunController::class, 'index']);
             Route::post ('/workflows/{workflow}/runs',          [RunController::class, 'start'])
                 ->middleware('idempotent');
+            Route::get  ('/runs/{run}/stream',                   [RunController::class, 'stream']);
             Route::get  ('/runs/{run}',                         [RunController::class, 'show']);
             Route::post ('/runs/{run}/cancel',                  [RunController::class, 'cancel']);
+
+            // Phase 2 — F06/F07/F08/F11 (+ MCP gateway scaffold, PRD F13-04)
+            Route::post ('/planner/generate',                  [PlannerController::class, 'generate']);
+            Route::get  ('/cua/status',                         [CuaController::class, 'status']);
+            Route::post ('/cua/sessions',                      [CuaController::class, 'storeSession']);
+            Route::delete('/cua/sessions/{session}',            [CuaController::class, 'destroySession']);
+            Route::get  ('/mcp/tools',                         [McpGatewayController::class, 'tools']);
+            Route::post ('/mcp/invoke',                        [McpGatewayController::class, 'invoke']);
+            Route::get  ('/observability/summary',             [ObservabilityController::class, 'summary']);
 
             // Secrets -------------------------------------------------
             Route::get   ('/secrets',           [SecretController::class, 'index']);

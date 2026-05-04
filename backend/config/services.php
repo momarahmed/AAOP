@@ -21,4 +21,12 @@ return [
             'channel'              => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
+    /*
+    | Optional HTTP MCP bridge (T-F13-04). When unset, the gateway returns
+    | bundled dev stubs only.
+    */
+    'mcp' => [
+        'remote_base' => env('AAOP_MCP_REMOTE_BASE'),
+    ],
 ];
