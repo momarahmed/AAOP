@@ -1,0 +1,20 @@
+[mysqld]
+# =====================================================================
+# AAOP — dev-friendly MySQL 8.4 tuning
+# Notes:
+#   * `default_authentication_plugin` is removed in 8.4 — use
+#     `authentication_policy` instead. caching_sha2_password is the
+#     default already, so we don't need to set it explicitly.
+#   * We deliberately do NOT pin `log_error` to /var/log/mysql/* — that
+#     path does not exist in the official image and the default
+#     (stderr) flows straight to `docker logs aaop-mysql`, which is
+#     what every developer reaches for first.
+# =====================================================================
+
+character-set-server   = utf8mb4
+collation-server       = utf8mb4_0900_ai_ci
+innodb_buffer_pool_size = 256M
+max_connections        = 200
+# AAOP enforces explicit primary keys at the schema level (see
+# migrations); this also keeps replication / GTID-friendly defaults.
+sql_require_primary_key = ON

@@ -1,0 +1,150 @@
+/* =====================================================================
+   Fusion MCP — global tokens & utilities
+   Ported from /opt/AAOP/UI/theme.css. Kept as plain CSS variables so
+   they remain accessible to non-MUI components and inline svg/canvas.
+   ===================================================================== */
+
+:root {
+  /* Deep teal palette */
+  --bg-deepest: oklch(22% 0.03 195);
+  --bg-deep: oklch(28% 0.035 195);
+  --bg-mid: oklch(33% 0.04 195);
+  --bg-surface: oklch(38% 0.04 195);
+  --bg-elevated: oklch(42% 0.045 195);
+  --bg-form: oklch(96% 0.005 200);
+  --bg-form-soft: oklch(98% 0.003 200);
+
+  /* Lines / borders */
+  --line-subtle: oklch(45% 0.04 195 / 0.4);
+  --line: oklch(55% 0.04 195 / 0.5);
+  --line-strong: oklch(65% 0.05 195 / 0.7);
+  --line-light: oklch(88% 0.005 200);
+  --line-light-strong: oklch(75% 0.01 200);
+
+  /* Text */
+  --ink: oklch(98% 0.005 200);
+  --ink-muted: oklch(82% 0.015 195);
+  --ink-soft: oklch(68% 0.02 195);
+  --ink-dark: oklch(22% 0.02 200);
+  --ink-dark-muted: oklch(45% 0.015 200);
+
+  /* Accents */
+  --accent-cyan: oklch(78% 0.14 200);
+  --accent-cyan-bright: oklch(85% 0.16 195);
+  --accent-cyan-soft: oklch(78% 0.14 200 / 0.15);
+  --accent-amber: oklch(78% 0.13 70);
+  --accent-amber-soft: oklch(78% 0.13 70 / 0.18);
+  --accent-violet: oklch(70% 0.13 290);
+  --accent-violet-soft: oklch(70% 0.13 290 / 0.18);
+  --accent-mint: oklch(80% 0.13 160);
+  --accent-mint-soft: oklch(80% 0.13 160 / 0.18);
+  --accent-rose: oklch(72% 0.15 25);
+  --accent-rose-soft: oklch(72% 0.15 25 / 0.18);
+
+  /* Status */
+  --ok: oklch(76% 0.15 155);
+  --warn: oklch(78% 0.14 75);
+  --err: oklch(70% 0.18 25);
+  --info: oklch(78% 0.14 200);
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.12);
+  --shadow: 0 6px 20px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.18);
+  --shadow-lg: 0 24px 60px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.25);
+  --glow-cyan: 0 0 0 1px oklch(78% 0.14 200 / 0.4), 0 0 32px oklch(78% 0.14 200 / 0.3);
+
+  --ff-serif: 'Newsreader', 'Source Serif Pro', Georgia, serif;
+  --ff-sans:  'Inter', system-ui, -apple-system, sans-serif;
+  --ff-mono:  'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg-deepest);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.serif { font-family: 'Newsreader', 'Source Serif Pro', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+.mono  { font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace; }
+
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; font-size: inherit; }
+
+/* Utility text */
+.eyebrow        { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
+.eyebrow-amber  { color: var(--accent-amber); }
+.eyebrow-cyan   { color: var(--accent-cyan); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(50% 0.04 195 / 0.4); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(60% 0.04 195 / 0.6); }
+
+.bg-blobs {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 20%, oklch(40% 0.06 195 / 0.6), transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 70%, oklch(38% 0.07 200 / 0.5), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 70% 15%, oklch(42% 0.05 190 / 0.4), transparent 60%),
+    var(--bg-deep);
+  overflow: hidden;
+}
+
+.bg-mesh {
+  background-image:
+    linear-gradient(oklch(60% 0.04 195 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(60% 0.04 195 / 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-glow {
+  position: relative;
+  background:
+    radial-gradient(1200px 600px at 8% -10%, oklch(40% 0.07 200 / 0.55), transparent 60%),
+    radial-gradient(900px 600px at 100% 110%, oklch(38% 0.07 200 / 0.5), transparent 55%),
+    var(--bg-deepest);
+}
+.bg-glow::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(oklch(60% 0.04 195 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(60% 0.04 195 / 0.04) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse at top, rgba(0,0,0,0.7), rgba(0,0,0,0));
+}
+
+/* Status pills */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 500;
+  border: 1px solid currentColor;
+}
+.pill-ok   { color: var(--ok);   background: oklch(76% 0.15 155 / 0.12); }
+.pill-warn { color: var(--warn); background: oklch(78% 0.14 75 / 0.12); }
+.pill-err  { color: var(--err);  background: oklch(70% 0.18 25 / 0.12); }
+.pill-info { color: var(--info); background: oklch(78% 0.14 200 / 0.12); }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.dot-pulse { box-shadow: 0 0 0 0 currentColor; animation: pulse 2s infinite; }
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 currentColor; }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* Logo */
+.fmcp-logo { display: inline-flex; align-items: center; gap: 10px; }
+.fmcp-mark-svg { filter: drop-shadow(0 0 8px oklch(78% 0.14 200 / 0.4)); }
+.fmcp-wordmark { font-family: 'Newsreader', serif; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink); }
+.fmcp-sub      { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.2em; color: var(--ink-soft); display: block; margin-top: -2px; text-transform: uppercase; }

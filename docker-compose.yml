@@ -1,0 +1,222 @@
+# =====================================================================
+# AAOP — AI Agent Orchestration Platform
+# Local development stack
+#
+# Services
+#   - frontend  : Next.js 15 + MUI (hot reload)
+#   - backend   : Laravel 12 + PHP 8.3 + Composer (artisan serve)
+#   - mysql     : MySQL 8.4 (named volume, persistent)
+#   - redis     : Redis 7 (cache / queue / sessions)
+#   - mailpit   : Local SMTP catcher for dev emails
+#
+# Host bindings (per /opt/AAOP/PRD/dev-env.txt §41-47)
+#   Frontend  -> http://127.0.0.1:${FRONTEND_HOST_PORT}    (preferred 3000)
+#   Backend   -> http://127.0.0.1:${BACKEND_HOST_PORT}     (preferred 8000)
+#   MySQL     -> 127.0.0.1:${DB_HOST_PORT}                 (preferred 3306)
+#   Redis     -> 127.0.0.1:${REDIS_HOST_PORT}              (preferred 6379)
+#   Mailpit   -> http://127.0.0.1:${MAILPIT_UI_PORT} (UI), ${MAILPIT_SMTP_PORT} (SMTP)
+#
+# `scripts/pick-ports.sh` (run automatically by `make up`) probes each
+# preferred port and walks a short candidate list if busy, persisting
+# the chosen values into the repo-root `.env`. Compose interpolates
+# APP_URL, FRONTEND_URL, SANCTUM_STATEFUL_DOMAINS, NEXT_PUBLIC_APP_URL,
+# and host port mappings from those variables. The browser talks to
+# Laravel only via Next.js rewrites (`/api`, `/sanctum`); INTERNAL_API_URL
+# is the server-side rewrite target so Sanctum CSRF cookies stay
+# first-party (see `frontend/next.config.mjs`).
+# =====================================================================
+
+services:
+
+  # -------------------------------------------------------------------
+  # MySQL 8.4 — primary relational store (workspaces, workflows, runs)
+  # -------------------------------------------------------------------
+  mysql:
+    image: mysql:8.4
+    container_name: aaop-mysql
+    restart: unless-stopped
+    # NB: MySQL 8.4 removed `--default-authentication-plugin`; the
+    # caching_sha2_password policy is the default and is enforced via
+    # `authentication_policy` if you need to override it. Keep the rest
+    # of the tuning in docker/mysql/conf.d/aaop.cnf.
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --explicit_defaults_for_timestamp=1
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+      MYSQL_DATABASE: ${DB_DATABASE:-aaop}
+      MYSQL_USER: ${DB_USERNAME:-aaop}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-aaopsecret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
+    ports:
+      - "${DB_HOST_PORT:-3306}:3306"
+    networks: [aaop]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # -------------------------------------------------------------------
+  # Redis 7 — cache, queues (Laravel queue + horizon-friendly), sessions
+  # -------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: aaop-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    networks: [aaop]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # -------------------------------------------------------------------
+  # Mailpit — local SMTP catcher (verification, approval, audit emails)
+  # -------------------------------------------------------------------
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: aaop-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    networks: [aaop]
+
+  # -------------------------------------------------------------------
+  # Backend — Laravel 12 / PHP 8.3 / artisan serve (dev hot-reload)
+  # -------------------------------------------------------------------
+  backend:
+    build:
+      context: ./docker/backend
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: aaop-backend
+    restart: unless-stopped
+    working_dir: /var/www/html
+    environment:
+      # Service-name-based for in-network connections
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-aaop}
+      DB_USERNAME: ${DB_USERNAME:-aaop}
+      DB_PASSWORD: ${DB_PASSWORD:-aaopsecret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: "no-reply@aaop.local"
+      MAIL_FROM_NAME: "AAOP"
+      APP_URL: http://127.0.0.1:${BACKEND_HOST_PORT:-8000}
+      FRONTEND_URL: http://127.0.0.1:${FRONTEND_HOST_PORT:-3000}
+      SANCTUM_STATEFUL_DOMAINS: "127.0.0.1:${FRONTEND_HOST_PORT:-3000},localhost:${FRONTEND_HOST_PORT:-3000}"
+      SESSION_DOMAIN: "127.0.0.1"
+    volumes:
+      - ./backend:/var/www/html
+      - composer_cache:/home/dev/.composer/cache
+    ports:
+      - "${BACKEND_HOST_PORT:-8000}:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [aaop]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  # -------------------------------------------------------------------
+  # Backend queue worker — processes Redis queues (async runs, audit)
+  # -------------------------------------------------------------------
+  queue:
+    build:
+      context: ./docker/backend
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: aaop-queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=2", "--tries=3", "--timeout=120"]
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-aaop}
+      DB_USERNAME: ${DB_USERNAME:-aaop}
+      DB_PASSWORD: ${DB_PASSWORD:-aaopsecret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./backend:/var/www/html
+      - composer_cache:/home/dev/.composer/cache
+    depends_on:
+      backend:
+        condition: service_started
+    networks: [aaop]
+
+  # -------------------------------------------------------------------
+  # Frontend — Next.js 15 / MUI / Node 22-alpine (npm run dev)
+  # -------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./docker/frontend
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: aaop-frontend
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      # File watching inside Docker volumes is unreliable without polling
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      NODE_ENV: development
+      # Next rewrites `/api` + `/sanctum` → Laravel; empty public API URL
+      # keeps Axios on the same origin so `XSRF-TOKEN` is readable (419 fix).
+      INTERNAL_API_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: ""
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:${FRONTEND_HOST_PORT:-3000}
+      NEXT_PUBLIC_HOST_IP: "127.0.0.1"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next_cache:/app/.next
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_started
+    networks: [aaop]
+
+# ---------------------------------------------------------------------
+# Networks & named volumes
+# ---------------------------------------------------------------------
+networks:
+  aaop:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  composer_cache:
+  frontend_node_modules:
+  frontend_next_cache:
