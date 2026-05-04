@@ -71,4 +71,16 @@ class User extends Authenticatable implements MustVerifyEmail
             ? Workspace::query()->find($this->default_workspace_id)
             : $this->workspaces()->first();
     }
+
+    /** @return HasMany<WebauthnCredential> */
+    public function webauthnCredentials(): HasMany
+    {
+        return $this->hasMany(WebauthnCredential::class, 'user_id');
+    }
+
+    /** @return HasMany<OauthIdentity> */
+    public function oauthIdentities(): HasMany
+    {
+        return $this->hasMany(OauthIdentity::class, 'user_id');
+    }
 }

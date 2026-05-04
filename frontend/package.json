@@ -1,6 +1,6 @@
 {
   "name": "aaop-frontend",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "AAOP — AI Agent Orchestration Platform · Next.js 15 + MUI v6 SPA (Fusion-MCP themed)",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
     "@mui/material-nextjs": "^6.1.9",
     "@mui/system": "^6.1.10",
     "@mui/x-data-grid": "^7.23.0",
+    "@xyflow/react": "^12.10.2",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "next": "^15.1.0",

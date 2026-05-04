@@ -22,11 +22,14 @@ const NAV: NavItem[] = [
   { group: 'Operate', href: '/incidents',     label: 'Incidents',      icon: IconAlert },
 
   { group: 'Compose', href: '/orchestrations', label: 'Orchestrations', icon: IconWorkflow },
+  { group: 'Compose', href: '/designer',       label: 'Designer',       icon: IconBolt },
   { group: 'Compose', href: '/agents',         label: 'Agents',         icon: IconAgent },
   { group: 'Compose', href: '/tools',          label: 'Tools & MCP',    icon: IconBolt },
 
   { group: 'Govern',  href: '/policies',       label: 'Policies',       icon: IconShield },
   { group: 'Govern',  href: '/approvals',      label: 'Approvals',      icon: IconFlag },
+  { group: 'Govern',  href: '/compliance',     label: 'Compliance',     icon: IconShield },
+  { group: 'Govern',  href: '/memory',         label: 'Memory & UI map',icon: IconChip },
   { group: 'Govern',  href: '/audit',          label: 'Audit Log',      icon: IconScroll },
 
   { group: 'Admin',   href: '/roles',          label: 'Roles & Users',  icon: IconUsers },

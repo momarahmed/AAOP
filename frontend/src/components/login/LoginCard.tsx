@@ -1,28 +1,73 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box, Button, InputAdornment, Tab, Tabs, TextField, Typography, Alert,
 } from '@mui/material';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { api, unwrapError } from '@/lib/api/client';
+import { passkeyLogin } from '@/lib/auth/webauthn';
 import {
   IconChevron, IconFingerprint, IconKey, IconShield, IconUsers, IconChip,
 } from '@/components/shared/Icons';
 
 type Mode = 'credentials' | 'register' | 'sso' | 'passkey';
 
+interface SsoProvider { id: string; label: string; enabled: boolean; configured: boolean; }
+
 export function LoginCard() {
   const [mode, setMode] = useState<Mode>('credentials');
   const [busy, setBusy] = useState(false);
   const [err, setErr]   = useState<string | null>(null);
   const router = useRouter();
-  const { login, register } = useAuth();
+  const { login, register, refresh } = useAuth();
 
   const [email,        setEmail]    = useState('admin@aaop.local');
   const [password,     setPassword] = useState('ChangeMe!12345');
   const [displayName,  setDisplay]  = useState('');
   const [workspaceNm,  setWsName]   = useState('My Workspace');
+
+  const [providers, setProviders] = useState<SsoProvider[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await api.get<{ data: SsoProvider[] }>('/api/v1/auth/sso/providers');
+        if (!cancelled) setProviders(data.data ?? []);
+      } catch { /* SSO providers optional */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const startSso = async (provider: string) => {
+    setBusy(true); setErr(null);
+    try {
+      const { data } = await api.post<{ url: string; state: string }>(`/api/v1/auth/sso/${provider}/redirect`);
+      if (typeof window !== 'undefined' && data?.url) {
+        window.sessionStorage.setItem('aaop:sso_provider', provider);
+        window.location.href = data.url;
+      }
+    } catch (ex) {
+      setErr(unwrapError(ex).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const startPasskey = async () => {
+    setBusy(true); setErr(null);
+    try {
+      await passkeyLogin(email);
+      await refresh();
+      router.replace('/dashboard');
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : 'Passkey sign-in failed');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,18 +185,22 @@ export function LoginCard() {
             }}>or sign in with</Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
-              {[
-                { mark: 'M', label: 'Microsoft Entra' },
-                { mark: 'G', label: 'Google'         },
-                { mark: 'O', label: 'Okta'           },
-              ].map(p => (
-                <Button key={p.mark} variant="outlined" size="small" disabled
-                        sx={{ textTransform: 'none', justifyContent: 'flex-start', gap: 1, fontSize: 11 }}>
+              {(providers.length ? providers : [
+                { id: 'microsoft', label: 'Microsoft Entra', enabled: false, configured: false },
+                { id: 'google',    label: 'Google',          enabled: false, configured: false },
+                { id: 'okta',      label: 'Okta',            enabled: false, configured: false },
+              ]).map(p => (
+                <Button
+                  key={p.id} variant="outlined" size="small"
+                  disabled={!p.configured || busy}
+                  onClick={() => p.configured && startSso(p.id)}
+                  sx={{ textTransform: 'none', justifyContent: 'flex-start', gap: 1, fontSize: 11 }}
+                >
                   <Box sx={{
                     width: 22, height: 22, borderRadius: 0.75,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     background: 'oklch(35% 0.05 200 / 0.6)', color: 'var(--accent-cyan)', fontWeight: 700,
-                  }}>{p.mark}</Box>
+                  }}>{p.label.charAt(0)}</Box>
                   {p.label}
                 </Button>
               ))}
@@ -161,25 +210,36 @@ export function LoginCard() {
 
         {mode === 'sso' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <TextField label="Identity provider" size="small" defaultValue="acme-corp.okta.com" disabled
+            <TextField label="Identity provider hint" size="small" placeholder="e.g. acme-corp.okta.com"
+                       value={email} onChange={(e) => setEmail(e.target.value)}
                        InputProps={{ startAdornment: <InputAdornment position="start"><IconShield size={14} /></InputAdornment> }} />
-            {['Microsoft Entra ID','Okta Workforce','Google Workspace','PingFederate','OneLogin','SAML 2.0 (custom)'].map(p => (
-              <Button key={p} variant="outlined" size="small" disabled
-                      sx={{ justifyContent: 'space-between', textTransform: 'none', fontSize: 12 }}
-                      endIcon={<IconChevron size={14} />}>
+            {(providers.length ? providers : []).map(p => (
+              <Button
+                key={p.id}
+                variant="outlined" size="small"
+                disabled={!p.configured || busy}
+                onClick={() => startSso(p.id)}
+                sx={{ justifyContent: 'space-between', textTransform: 'none', fontSize: 12 }}
+                endIcon={<IconChevron size={14} />}
+              >
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{
                     width: 22, height: 22, borderRadius: 0.75,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     background: 'oklch(35% 0.05 200 / 0.6)', color: 'var(--accent-cyan)', fontWeight: 700,
-                  }}>{p[0]}</Box>
-                  {p}
+                  }}>{p.label.charAt(0)}</Box>
+                  {p.label}
                 </Box>
               </Button>
             ))}
-            <Typography sx={{ fontSize: 11, color: 'var(--ink-soft)', mt: 1.5 }}>
-              SSO providers will be enabled in Phase 5. For now, use Credentials.
-            </Typography>
+            {providers.length === 0 && (
+              <Typography sx={{ fontSize: 11, color: 'var(--ink-soft)', mt: 1.5 }}>
+                No SSO providers configured. Set <code className="mono">SSO_GOOGLE_CLIENT_ID</code> /{' '}
+                <code className="mono">SSO_MICROSOFT_CLIENT_ID</code> /{' '}
+                <code className="mono">SSO_OKTA_CLIENT_ID</code> in <code className="mono">.env</code> and toggle{' '}
+                <code className="mono">SSO_*_ENABLED=true</code>.
+              </Typography>
+            )}
           </Box>
         )}
 
@@ -205,14 +265,17 @@ export function LoginCard() {
               <Box sx={{ color: 'var(--accent-cyan)' }}><IconFingerprint size={48} /></Box>
             </Box>
             <Typography sx={{ fontFamily: 'var(--ff-serif)', fontSize: 18 }}>Touch your security device</Typography>
+            <TextField size="small" label="Email (optional)" value={email}
+                       onChange={(e) => setEmail(e.target.value)} sx={{ maxWidth: 320, width: '100%' }} />
             <Typography sx={{ fontSize: 12, color: 'var(--ink-soft)', maxWidth: 320 }}>
-              Awaiting hardware-backed credential. Use a roaming authenticator, platform key, or YubiKey 5 series.
+              Hardware-backed credential. Use a roaming authenticator, platform key, or YubiKey 5 series.
             </Typography>
-            <Button variant="contained" color="primary" disabled startIcon={<IconKey size={14} />}>
-              Authenticate with passkey
+            <Button variant="contained" color="primary" startIcon={<IconKey size={14} />}
+                    onClick={startPasskey} disabled={busy}>
+              {busy ? 'Authenticating…' : 'Authenticate with passkey'}
             </Button>
             <Typography sx={{ fontSize: 11, color: 'var(--ink-soft)' }}>
-              FIDO2 / WebAuthn support arrives in Phase 5.
+              FIDO2 / WebAuthn — registers from Profile after sign-in.
             </Typography>
           </Box>
         )}
