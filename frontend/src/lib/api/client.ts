@@ -118,10 +118,26 @@ export type ApiError = {
   correlation_id?: string | null;
 };
 
+function validationMessages(error: ApiError): string | null {
+  if (error.code !== 'validation_error' || !error.details || typeof error.details !== 'object') {
+    return null;
+  }
+  const raw = (error.details as { errors?: Record<string, string[] | string> }).errors;
+  if (!raw || typeof raw !== 'object') return null;
+  const lines = Object.values(raw).flatMap((v) => (Array.isArray(v) ? v : [String(v)]));
+  const first = lines.find((s) => String(s).trim() !== '');
+  return first ? String(first) : null;
+}
+
 export function unwrapError(err: unknown): ApiError {
   if (axios.isAxiosError(err)) {
     const ae = err as AxiosError<{ error?: ApiError }>;
-    if (ae.response?.data?.error) return ae.response.data.error;
+    if (ae.response?.data?.error) {
+      const base = ae.response.data.error;
+      const specific = validationMessages(base);
+      if (specific) return { ...base, message: specific };
+      return base;
+    }
     return {
       code: 'network_error',
       message: ae.message || 'Network error',
