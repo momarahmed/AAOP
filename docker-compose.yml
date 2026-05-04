@@ -197,10 +197,12 @@ services:
       NEXT_PUBLIC_API_URL: ""
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:${FRONTEND_HOST_PORT:-3000}
       NEXT_PUBLIC_HOST_IP: "127.0.0.1"
+    # `.next` is intentionally NOT a named volume: it sits on the `./frontend` bind
+    # mount so Next never fights root-owned files from `docker compose exec` (EACCES
+    # on `.next/static/css/app`). `frontend/.gitignore` already ignores `.next`.
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
-      - frontend_next_cache:/app/.next
     ports:
       - "${FRONTEND_HOST_PORT:-3000}:3000"
     depends_on:
@@ -220,4 +222,3 @@ volumes:
   redis_data:
   composer_cache:
   frontend_node_modules:
-  frontend_next_cache:

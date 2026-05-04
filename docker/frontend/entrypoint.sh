@@ -28,6 +28,8 @@ if [ "$(id -u)" = "0" ]; then
   if ! chown -R "${UID_TARGET}:${GID_TARGET}" /app/node_modules /app/.next /home/dev/.npm; then
     echo "[entrypoint] WARNING: chown on node_modules/.next failed — check volume permissions." >&2
   fi
+  # Ensure write bit for dev after stray root-created files (bind-mounted `.next`).
+  chmod -R u+rwX /app/.next /app/node_modules 2>/dev/null || true
 
   exec su-exec "${UID_TARGET}:${GID_TARGET}" /usr/local/bin/aaop-frontend-entrypoint "$@"
 fi

@@ -29,11 +29,11 @@ If you bypass `make` and call `docker compose up` directly, run `make ports` fir
 
 **Fix (default in this repo):** the Axios client **always** uses a same-origin base URL in the browser (empty `baseURL` → `/api/*` and `/sanctum/*` on the Next app). Next.js rewrites (`frontend/next.config.mjs`) proxy those to Laravel via `INTERNAL_API_URL` (e.g. `http://backend:8000` in Docker). `NEXT_PUBLIC_API_URL` is **ignored in the browser** unless you set `NEXT_PUBLIC_API_DIRECT=true` (advanced / non–cookie flows).
 
-If DevTools still shows `POST http://127.0.0.1:8002/api/...`, you have a **stale client bundle** (old `NEXT_PUBLIC_*` baked into `.next`) or a `frontend/.env.local` forcing a direct API URL. Clear the cache volume and restart:
+If DevTools still shows `POST http://127.0.0.1:8002/api/...`, you have a **stale client bundle** (old `NEXT_PUBLIC_*` baked into `.next`) or a `frontend/.env.local` forcing a direct API URL. Clear the local Next cache and restart:
 
 ```bash
 docker compose down
-docker volume rm aaop_frontend_next_cache 2>/dev/null || true
+rm -rf frontend/.next
 make up
 ```
 
@@ -79,11 +79,11 @@ Polling is enabled but Docker on macOS occasionally still misses events on big r
 make restart-frontend
 ```
 
-If that doesn't help, blow away the cached `.next` volume and re-build:
+If that doesn't help, blow away the local `.next` folder (bind-mounted from the repo; no Docker volume) and restart:
 
 ```bash
 docker compose down
-docker volume rm aaop_frontend_next_cache
+rm -rf frontend/.next
 make up
 ```
 
